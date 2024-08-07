@@ -54,7 +54,7 @@ This server will start on port 8001.
 - Open your browser and navigate to `http://localhost:8001`.
 - Enter the login credentials:
   - **Username:** `user@example.com`
-  - **Password:** `Secret`
+  - **Password:** `secret`
 - Once authenticated, you will be redirected to the chatbot interface running on port 8000.
 
 ### 3. Chatbot Interface
