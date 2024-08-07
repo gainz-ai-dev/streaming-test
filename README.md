@@ -61,11 +61,11 @@ This server will start on port 8001.
 
 The chatbot will be accessible at `http://localhost:8000`. Here, you can interact with the chatbot in real-time using WebSockets.
 
-## Chatbot Features
+#### Chatbot Features
 **Document Retrieval Mechanism**
 The chatbot includes a retrieval mechanism that allows it to pull information from documents that have been uploaded to the backend. This mechanism ensures that the chatbot can provide accurate and relevant responses based on the content of these documents.
 
-## Contextual Understanding
+#### Contextual Understanding
 The chatbot leverages the OpenAI API to understand the context of the conversation. It uses contextual understanding to generate responses that are coherent and relevant to the ongoing conversation, improving the overall user experience.
 
 ## API Endpoints
