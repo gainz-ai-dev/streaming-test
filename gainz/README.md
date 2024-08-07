@@ -105,6 +105,39 @@ By default it runs:
 
 You can read more about pre-commit here: https://pre-commit.com/
 
+## Migrations
+
+If you want to migrate your database, you should run following commands:
+```bash
+# To run all migrations until the migration with revision_id.
+alembic upgrade "<revision_id>"
+
+# To perform all pending migrations.
+alembic upgrade "head"
+```
+
+### Reverting migrations
+
+If you want to revert migrations, you should run:
+```bash
+# revert all migrations up to: revision_id.
+alembic downgrade <revision_id>
+
+# Revert everything.
+ alembic downgrade base
+```
+
+### Migration generation
+
+To generate migrations you should run:
+```bash
+# For automatic change detection.
+alembic revision --autogenerate
+
+# For empty file generation.
+alembic revision
+```
+
 
 ## Running tests
 
@@ -120,6 +153,7 @@ For running tests on your local machine.
 
 I prefer doing it with docker:
 ```
+docker run -p "5432:5432" -e "POSTGRES_PASSWORD=gainz" -e "POSTGRES_USER=gainz" -e "POSTGRES_DB=gainz" postgres:16.3-bullseye
 ```
 
 

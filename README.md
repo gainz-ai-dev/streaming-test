@@ -1,36 +1,115 @@
-# [backend]
-gainz/ is the backend source code. Building by fastAPI and python
-For test and code review, please follow below instruction. 
+# Gainz Streaming Test
 
-1. Install MongoDB, Python, Docker, and related dependencies. 
-2. Install Python modules. Please view gainz/pyproject.toml. 
-3. As this is using poetry for virtual environment development, please make sure the modules/dependencies are installed under poetry. 
-    `poetry show` can show a list. 
-    `poetry install` will update the modules 
-    `poetry add` [individual modules] 
-4. Copy .env-example in gainz/ to .env. And fill up JWT_SECRET and OPENAI_API_KEY. Either inform henry930@gmail.com to get the key, or you create your own. 
-5. Make sure MongoDB, Docker, Python are up and running. For mongoDB, please stay admin with no password. Then:
-    `cd /gainz/gainz`
-    `poetry run python -m gainz`
+## Table of Contents
 
-6. Make sure your API url is http://127.0.0.1:8000/api/ As the frontend API Url is hard-code. Otherwise, please change in react manually. (See frontend section)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Running the Application](#running-the-application)
+- [Usage](#usage)
+  - [Backend](#backend)
+  - [Frontend](#frontend)
+- [Endpoints](#endpoints)
 
-7. Most of the code are under gainz/gainz/web/api/monitoring/
+## Getting Started
 
-# [frontend]
-react_websocket/my-websocket-app is the frontend source code. Building by React and Typescript
-I havn't test for dist/ built. So, please test both fronend and backend LOCALLY.
+Follow these instructions to set up and run the Gainz Streaming Test project on your local machine for development and testing purposes.
 
-1. Node and NPM install in machine (I have just tested in Mac, my Node is 20.x, Apple M1 chipset)
-`cd react_websocket/my-websocket-app`
-`npm install`
+### Prerequisites
 
-2. Make sure your backend is work properly in LOCAL. 
- `npm start`
-3. Your testing URL generally, is http://localhost:3000/ But may vary in different machine. 
+Ensure you have the following software installed:
 
-4. In frontend, at the first time, you have to register a user for testing. 
-5. Click "Register", and type your email and password, you account should generally be created instantly. Then use your email and password, you can login and chat with AI.
-6. Please use Desktop with chrome browser. The width is no less than 800px, suggested using fullscreen for testing.   
+- Docker
+- Docker Compose
+- Node.js
+- npm
 
-###### For an instant online video demo, you can send henry930@gmail.com or linkedin: http://www.linkedin.com/in/henry930 I can arrange a time for showing my works. ######
+### Installation
+
+Clone the repository to your local machine:
+
+```bash
+git clone <repository-url>
+cd gainz
+```
+
+## Running the Application
+
+1. Start the Backend:
+
+   - Navigate to the gainz directory
+   - Rename the .env.example file to .env
+   - Add your OpenAI API key to the `GAINZ_OPENAI_KEY` variable in the .env file
+   - Start the backend services using Docker Compose:
+
+   ```
+   cd gainz
+   mv .env.example .env
+   docker-compose -f docker-compose.yml -f deploy/docker-compose.dev.yml --project-directory . up --build
+   ```
+
+2. Run Database Migrations:
+   Open a new terminal tab, navigate to the gainz directory, and run the database migrations:
+
+   ```
+   cd gainz
+   docker-compose run --rm api alembic upgrade "head"
+   ```
+
+3. Start the Frontend:
+
+   - Open another new terminal tab, navigate to the frontend directory
+   - Rename the .env.example file to .env
+   - Start the frontend development server:
+
+   ```
+   cd frontend
+   mv .env.example .env
+   npm install
+   npm run start
+   ```
+
+## Usage
+
+Once the application is running, you can access the various services as follows:
+
+### Backend
+
+The backend API documentation can be accessed at:
+
+```
+http://localhost:8000/api/docs#/
+```
+
+### Frontend
+
+1. Register:
+   Go to the registration page to create a new user account:
+
+   ```
+   http://localhost:3000/auth/register
+   ```
+
+2. Login:
+   After successful registration, go to the login page:
+
+   ```
+   http://localhost:3000/auth/login
+   ```
+
+3. Chat Page:
+   Access the chat page:
+
+   ```
+   http://localhost:3000/
+   ```
+
+### Endpoints
+
+Here are some of the primary endpoints available in the application:
+
+- Register: `/auth/register`
+- Login: `/auth/login`
+- Chat: `/`
+- Create New Thread: `POST /api/openai/threads/`
+- Send Message to Thread: `POST /api/openai/threads/{thread_id}/messages/`

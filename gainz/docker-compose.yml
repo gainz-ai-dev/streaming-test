@@ -1,40 +1,63 @@
+version: "3.8"
+
 services:
   api: &main_app
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: ./Dockerfile
+    volumes:
+      - .:/app/src/
     image: gainz:${GAINZ_VERSION:-latest}
     restart: always
-    env_file:
-      - .env
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rmq:
+        condition: service_healthy
     environment:
       GAINZ_HOST: 0.0.0.0
       GAINZ_DB_HOST: gainz-db
-      GAINZ_DB_PORT: 27017
+      GAINZ_DB_PORT: 5432
       GAINZ_DB_USER: gainz
       GAINZ_DB_PASS: gainz
-      GAINZ_DB_BASE: admin
+      GAINZ_DB_BASE: gainz
+      GAINZ_RABBIT_HOST: gainz-rmq
       GAINZ_REDIS_HOST: gainz-redis
+
   db:
-    image: mongo:7.0
+    image: postgres:16.3-bullseye
     hostname: gainz-db
-    restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: "gainz"
-      MONGO_INITDB_ROOT_PASSWORD: "gainz"
-    command: "mongod"
+      POSTGRES_DB: gainz
+      POSTGRES_USER: gainz
+      POSTGRES_PASSWORD: gainz
     volumes:
-      - gainz-db-data:/data/db
+      - gainz-db-data:/var/lib/postgresql/data
+    restart: always
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
+      test: pg_isready -U gainz
+      interval: 2s
+      timeout: 3s
       retries: 40
+
+  migrator:
+    image: gainz:${GAINZ_VERSION:-latest}
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      GAINZ_DB_HOST: gainz-db
+      GAINZ_DB_PORT: 5432
+      GAINZ_DB_USER: gainz
+      GAINZ_DB_PASS: gainz
+      GAINZ_DB_BASE: gainz
+    depends_on:
+      db:
+        condition: service_healthy
 
   redis:
     image: bitnami/redis:6.2.5
@@ -48,7 +71,19 @@ services:
       timeout: 3s
       retries: 50
 
-
+  rmq:
+    image: rabbitmq:3.9.16-alpine
+    hostname: "gainz-rmq"
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    healthcheck:
+      test: rabbitmq-diagnostics check_running -q
+      interval: 3s
+      timeout: 3s
+      retries: 50
 
 volumes:
   gainz-db-data:
