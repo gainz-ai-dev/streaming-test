@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  api: &main_app
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - .:/app/src/
+    image: gainz:${GAINZ_VERSION:-latest}
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rmq:
+        condition: service_healthy
+    environment:
+      GAINZ_HOST: 0.0.0.0
+      GAINZ_DB_HOST: gainz-db
+      GAINZ_DB_PORT: 5432
+      GAINZ_DB_USER: gainz
+      GAINZ_DB_PASS: gainz
+      GAINZ_DB_BASE: gainz
+      GAINZ_RABBIT_HOST: gainz-rmq
+      GAINZ_REDIS_HOST: gainz-redis
+
+  db:
+    image: postgres:16.3-bullseye
+    hostname: gainz-db
+    environment:
+      POSTGRES_DB: gainz
+      POSTGRES_USER: gainz
+      POSTGRES_PASSWORD: gainz
+    volumes:
+      - gainz-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U gainz
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  migrator:
+    image: gainz:${GAINZ_VERSION:-latest}
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      GAINZ_DB_HOST: gainz-db
+      GAINZ_DB_PORT: 5432
+      GAINZ_DB_USER: gainz
+      GAINZ_DB_PASS: gainz
+      GAINZ_DB_BASE: gainz
+    depends_on:
+      db:
+        condition: service_healthy
+
+  redis:
+    image: bitnami/redis:6.2.5
+    hostname: "gainz-redis"
+    restart: always
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 50
+
+  rmq:
+    image: rabbitmq:3.9.16-alpine
+    hostname: "gainz-rmq"
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    healthcheck:
+      test: rabbitmq-diagnostics check_running -q
+      interval: 3s
+      timeout: 3s
+      retries: 50
+
+volumes:
+  gainz-db-data:
+    name: gainz-db-data
