@@ -1,0 +1,41 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: Gainz_App:${GAINZ_APP_VERSION:-latest}
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GAINZ_APP_HOST: 0.0.0.0
+      GAINZ_APP_DB_HOST: Gainz_App-db
+      GAINZ_APP_DB_PORT: 5432
+      GAINZ_APP_DB_USER: Gainz_App
+      GAINZ_APP_DB_PASS: Gainz_App
+      GAINZ_APP_DB_BASE: Gainz_App
+
+  db:
+    image: postgres:16.3-bullseye
+    hostname: Gainz_App-db
+    environment:
+      POSTGRES_PASSWORD: "Gainz_App"
+      POSTGRES_USER: "Gainz_App"
+      POSTGRES_DB: "Gainz_App"
+    volumes:
+      - Gainz_App-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U Gainz_App
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+
+
+volumes:
+  Gainz_App-db-data:
+    name: Gainz_App-db-data
