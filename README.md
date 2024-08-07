@@ -109,16 +109,6 @@ The chatbot leverages the OpenAI API to understand the context of the conversati
 
 ## Notes
 
-- Ensure that the `Auth.py` file and the main server script (`main.py`) use the correct environment variables and API keys.
+- Ensure that the `Auth.py` file and the main server script (`App.py`) use the correct environment variables and API keys.
 - The WebSocket server will handle real-time communication and should be properly secured and tested for performance, especially if handling multiple clients.
-
-## Troubleshooting
-
-- **Issue:** Authentication fails or server does not start.
-  - **Solution:** Check the `.env` file for correct values and ensure all dependencies are installed.
-
-- **Issue:** WebSocket connection errors.
-  - **Solution:** Verify that the WebSocket URL and thread IDs are correct. Ensure the server is running and accessible.
-
-
 
