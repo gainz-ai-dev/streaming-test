@@ -1,36 +1,114 @@
-# [backend]
-gainz/ is the backend source code. Building by fastAPI and python
-For test and code review, please follow below instruction. 
 
-1. Install MongoDB, Python, Docker, and related dependencies. 
-2. Install Python modules. Please view gainz/pyproject.toml. 
-3. As this is using poetry for virtual environment development, please make sure the modules/dependencies are installed under poetry. 
-    `poetry show` can show a list. 
-    `poetry install` will update the modules 
-    `poetry add` [individual modules] 
-4. Copy .env-example in gainz/ to .env. And fill up JWT_SECRET and OPENAI_API_KEY. Either inform henry930@gmail.com to get the key, or you create your own. 
-5. Make sure MongoDB, Docker, Python are up and running. For mongoDB, please stay admin with no password. Then:
-    `cd /gainz/gainz`
-    `poetry run python -m gainz`
+Recording of ChatBot
 
-6. Make sure your API url is http://127.0.0.1:8000/api/ As the frontend API Url is hard-code. Otherwise, please change in react manually. (See frontend section)
+https://github.com/user-attachments/assets/8d9452de-01dd-4472-9375-d6e87b960ed8
 
-7. Most of the code are under gainz/gainz/web/api/monitoring/
 
-# [frontend]
-react_websocket/my-websocket-app is the frontend source code. Building by React and Typescript
-I havn't test for dist/ built. So, please test both fronend and backend LOCALLY.
+# WebSocket Chatbot with Authentication
 
-1. Node and NPM install in machine (I have just tested in Mac, my Node is 20.x, Apple M1 chipset)
-`cd react_websocket/my-websocket-app`
-`npm install`
+This project sets up a web application with user authentication and real-time chatbot interaction using WebSockets. The application integrates with the OpenAI API to provide real-time responses to users connected to the same chat thread.
 
-2. Make sure your backend is work properly in LOCAL. 
- `npm start`
-3. Your testing URL generally, is http://localhost:3000/ But may vary in different machine. 
+## Project Setup
 
-4. In frontend, at the first time, you have to register a user for testing. 
-5. Click "Register", and type your email and password, you account should generally be created instantly. Then use your email and password, you can login and chat with AI.
-6. Please use Desktop with chrome browser. The width is no less than 800px, suggested using fullscreen for testing.   
+### Prerequisites
 
-###### For an instant online video demo, you can send henry930@gmail.com or linkedin: http://www.linkedin.com/in/henry930 I can arrange a time for showing my works. ######
+Ensure you have the following installed:
+
+- Python 3.x
+- Pip (Python package installer)
+
+### Dependencies
+
+Install the required Python packages using pip:
+
+```bash
+pip install fastapi uvicorn pydantic python-jose openai
+```
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+OPENAI_API_KEY=your_openai_api_key
+ASSISTANT_ID=your_assistant_id
+API_KEY=your_api_key_for_authentication
+```
+
+Replace `your_openai_api_key`, `your_assistant_id`, and `your_api_key_for_authentication` with your actual OpenAI API key, assistant ID, and authentication API key respectively.
+
+## Running the Project
+
+### 1. Start the Authentication Server
+
+Run the `Auth.py` file to start the authentication server:
+
+```bash
+python Auth.py
+```
+
+This server will start on port 8001.
+
+### 2. Authenticate and Access Chatbot
+
+- Open your browser and navigate to `http://localhost:8001`.
+- Enter the login credentials:
+  - **Username:** `user@example.com`
+  - **Password:** `secret`
+- Once authenticated, you will be redirected to the chatbot interface running on port 8000.
+
+### 3. Chatbot Interface
+
+The chatbot will be accessible at `http://localhost:8000`. Here, you can interact with the chatbot in real-time using WebSockets.
+
+#### Chatbot Features
+**Document Retrieval Mechanism**
+The chatbot includes a retrieval mechanism that allows it to pull information from documents that have been uploaded to the backend. This mechanism ensures that the chatbot can provide accurate and relevant responses based on the content of these documents.
+
+#### Contextual Understanding
+The chatbot leverages the OpenAI API to understand the context of the conversation. It uses contextual understanding to generate responses that are coherent and relevant to the ongoing conversation, improving the overall user experience.
+
+## API Endpoints
+
+### Authentication
+
+- **POST /token**
+  - **Description:** Authenticate a user and obtain a JWT token.
+  - **Request:**
+    ```json
+    {
+      "username": "user@example.com",
+      "password": "Secret"
+    }
+    ```
+  - **Response:**
+    ```json
+    {
+      "access_token": "jwt_token_here",
+      "token_type": "bearer"
+    }
+    ```
+  - **Note:** The JWT token is set in a secure cookie.
+
+- **GET /**
+  - **Description:** Displays the login page.
+
+### WebSocket
+
+- **WebSocket /ws/{thread_id}**
+  - **Description:** Establish a WebSocket connection for real-time interaction with the chatbot.
+  - **Path Parameters:**
+    - `thread_id`: Identifier for the chat thread.
+  - **Behavior:** The WebSocketManager class manages connections per thread, allowing broadcasting of messages to all clients in the same thread. The OpenAI API is used to generate responses to client messages.
+
+## Recommended File Structure
+
+<img width="181" alt="project_struct" src="https://github.com/user-attachments/assets/98977238-8883-40a7-97af-f0503c05bb4f">
+
+
+
+## Notes
+
+- Ensure that the `Auth.py` file and the main server script (`App.py`) use the correct environment variables and API keys.
+- The WebSocket server will handle real-time communication and should be properly secured and tested for performance, especially if handling multiple clients.
+
