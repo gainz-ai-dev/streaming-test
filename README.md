@@ -61,6 +61,13 @@ This server will start on port 8001.
 
 The chatbot will be accessible at `http://localhost:8000`. Here, you can interact with the chatbot in real-time using WebSockets.
 
+## Chatbot Features
+**Document Retrieval Mechanism**
+The chatbot includes a retrieval mechanism that allows it to pull information from documents that have been uploaded to the backend. This mechanism ensures that the chatbot can provide accurate and relevant responses based on the content of these documents.
+
+## Contextual Understanding
+The chatbot leverages the OpenAI API to understand the context of the conversation. It uses contextual understanding to generate responses that are coherent and relevant to the ongoing conversation, improving the overall user experience.
+
 ## API Endpoints
 
 ### Authentication
@@ -94,18 +101,11 @@ The chatbot will be accessible at `http://localhost:8000`. Here, you can interac
     - `thread_id`: Identifier for the chat thread.
   - **Behavior:** The WebSocketManager class manages connections per thread, allowing broadcasting of messages to all clients in the same thread. The OpenAI API is used to generate responses to client messages.
 
-## File Structure
+## Recommended File Structure
 
-```
-.
-├── .env                 # Environment variables
-├── Auth.py              # Authentication server script
-├── main.py              # Chatbot server script
-├── manager.py           # WebSocket manager
-├── utils.py             # Utility functions for OpenAI API
-├── requirements.txt     # List of dependencies
-└── README.md            # This file
-```
+<img width="181" alt="project_struct" src="https://github.com/user-attachments/assets/98977238-8883-40a7-97af-f0503c05bb4f">
+
+
 
 ## Notes
 
