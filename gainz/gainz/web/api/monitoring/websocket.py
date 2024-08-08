@@ -5,7 +5,7 @@ from openai import OpenAI
 import json
 from .auth import get_current_user
 from .model import User, Login, Token, Message, Thread
-from .db import create_message_record, create_thread_record
+from .db import create_message_record, create_thread_record, list_all_threads, delete_all_threads
 import time
 from dotenv import load_dotenv
 
@@ -111,15 +111,18 @@ async def chatCreateMessage(ms:Message):
 
 
 
+
+
 @ws.post("/create-thread")
-async def chatCreateThread(current_user: User = Depends(get_current_user)):
+def chatCreateThread(current_user: User = Depends(get_current_user)):
     response = client.beta.threads.create()
     try:
         thread_data = {
             "id": response.id,
             "aid": ASSISTANT_ID,
             "uid": current_user['id'],
-            "timestamp": int(time.time())
+            "timestamp": int(time.time()), 
+            "name": "New Thread"
         }
         thread = Thread(**thread_data)
         create_thread_record(thread)
@@ -129,10 +132,28 @@ async def chatCreateThread(current_user: User = Depends(get_current_user)):
         return {"message": "Create fail", "code": -100}
 
 @ws.post("/list-thread")
-def chatListMessages():
-    global threadId
-    print(threadId)
-    messages={"message":"nothing"}
-    messages = client.beta.threads.messages.list(thread_id=threadId, order="asc")
-    return messages
+def chatListThread(current_user: User = Depends(get_current_user)):
+    try:        
+        uid = current_user['id']
+        result=list_all_threads(uid)
+        print(result)
+        return result
+    except:
+        return False
+    # messages = client.beta.threads.messages.list(thread_id=threadId, order="asc")
+    # print (messages)
+    # return messages
+
+@ws.post("/delete-thread")
+def chatDeleteThread(current_user: User = Depends(get_current_user)):
+    try:        
+        uid = current_user['id']
+        result=delete_all_threads(uid)
+        print(result)
+        return True
+    except:
+        return False
+    # messages = client.beta.threads.messages.list(thread_id=threadId, order="asc")
+    # print (messages)
+    # return messages
 

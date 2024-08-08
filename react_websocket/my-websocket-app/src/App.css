@@ -20,7 +20,7 @@
 
 .panel {
   display: grid;
-  grid-template-columns: 1fr 10fr;
+  grid-template-columns: 2fr 8fr;
 }
 .me, .ai{
   display:block;

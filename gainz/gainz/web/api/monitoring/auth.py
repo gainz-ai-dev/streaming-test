@@ -2,12 +2,13 @@ import jwt
 import time
 import os
 import bcrypt
+import json
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from gainz.settings import Settings
 from .db import get_db, get_collection
-from .model import User, Login, Token
+from .model import User, Login, Token, Thread
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,7 +20,7 @@ ALGORITHM = "HS256"
 # Currently, it's only a very very very prelimit JWT development. Use 3rd party provider and cloud solution is recommended. 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    to_encode["exp"] = int(time.time() + 600)  # Token expiry in seconds
+    to_encode["exp"] = int(time.time() + 6000)  # Token expiry in seconds
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -109,7 +110,7 @@ async def login_user(login: Login):
 @auth.get("/list")
 def seed_initial_data():
     db = get_db()
-    collection = db['User']
+    collection = db['Thread']
     for x in collection.find():
         print(x)
     return {"message": "All User List"}
@@ -119,3 +120,7 @@ def seed_initial_data():
 @auth.post("/protected_route")
 async def protected_route(current_user: User = Depends(get_current_user)):
     return {"message": f"Hello, {current_user['name']}!"}
+
+@auth.get("/create")
+def create_initial_data():
+    return True

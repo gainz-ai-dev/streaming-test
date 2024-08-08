@@ -17,23 +17,23 @@ myclient = pymongo.MongoClient('mongodb://localhost:27017/')
 
 # DB name and Collection (i.e. Table) are hardcode. Will be updated later. 
 db = myclient["gainz"]
-collection = db["users"]
 
 
 def get_db():
     return db
 
-def get_collection():
-    return collection
+def get_collection(name:str):
+    return db[name]
 
 # OpenAI database function
-async def create_thread_record(thread: Thread):
+def create_thread_record(thread: Thread):
     # Hash the password before storing
     try:
+        print(thread.json())
         db = get_db()
         collection = db['Thread']
         data = vars(thread)
-        data['_id']= thread.tid
+        data['_id']= thread.id
         collection.insert_one(data)
         return True
     except:
@@ -47,6 +47,30 @@ async def create_message_record(message: Message):
         data = vars(message)
         data['_id']= message.id
         collection.insert_one(data)
+        return True
+    except:
+        return False
+    
+def list_all_threads(uid: str):
+    try:
+        arr=[]
+        db = get_db()
+        collection = db['Thread']
+        query = {"uid": uid}
+        results = collection.find(query)
+        for record in results:
+            arr.append(record)
+            print(record)
+        return arr
+    except:
+        return False
+
+def delete_all_threads(uid: str):
+    try:
+        db = get_db()
+        collection = db['Thread']
+        query = {"uid": uid}
+        results = collection.delete_many(query)
         return True
     except:
         return False

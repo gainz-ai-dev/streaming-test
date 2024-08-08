@@ -28,3 +28,4 @@ class Thread(BaseModel):
     aid: str
     uid: str
     timestamp: int
+    name: str

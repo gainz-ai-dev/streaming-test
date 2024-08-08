@@ -3,7 +3,14 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { TextField,Button,ButtonGroup,IconButton,List,ListItemButton,ListItemIcon,ListItemText} from '@mui/material';
 import { createSvgIcon } from '@mui/material/utils';
 import ListIcon from '@mui/icons-material/List';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import { HiChevronDoubleRight } from "react-icons/hi";
+
 
 import axios from 'axios';  
 
@@ -27,6 +34,11 @@ interface Message {
     sender: string, 
     message: string
 }
+interface Thread {
+    tid: string, 
+    name: string,
+    timestamp: number
+}
 interface Thread_Message{
     tid: string, 
     message: string
@@ -41,7 +53,9 @@ function messsageRenderer(msg:String){
 // the socketUrl is hardcode. Will setup a testing server for this in future. 
 
 function WebSocket() {
+  const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [threads,setThreads] = useState<Thread[]>([])
   const [msg,setMsg] = useState<Message[]>([])
   const [threadId, setThreadId] = useState('')
   const token = localStorage.getItem('access_token') || null;
@@ -49,6 +63,14 @@ function WebSocket() {
 
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -75,9 +97,12 @@ function WebSocket() {
   } = useWebSocket(socketUrl);
 
   useEffect(() => {
+
     if (readyState === ReadyState.OPEN) {
         // This is for token authentication in API level. Currently, we just have authentication in html rendering level. 
         console.log('WebSocket connected');
+        handleListThread()
+
     }
   }, [sendMessage, readyState, token]);
 
@@ -98,6 +123,7 @@ function WebSocket() {
   }, [lastMessage]);
 
   const handleNewThread = async () => { 
+    // let thread_title = prompt("Please type the thread name.")
     try {
       const response = await axios.post(_URL+'/api/create-thread',{
       }, {
@@ -106,7 +132,7 @@ function WebSocket() {
               Authorization: `Bearer ${token}`
           }
       })
-      console.log('Messages',response)
+      alert('New Thread has been created. Please add some messages for AI learning. First word of your sentence will be the name the thread. You can always click the RUN button on the left side to view the result. Enjoy!')
     } catch (error) {
       console.log(error)
     }
@@ -115,11 +141,43 @@ function WebSocket() {
     scrollToBottom()
   };
 
-  const handleListThread=()=>{
-
+  
+  const handleListThread = async ()=>{
+    console.log('List Thread')
+    try {
+      const response = await axios.post(_URL+'/api/list-thread',{
+      }, {
+          headers:{
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+          }
+      })
+      // return response
+    } catch (error) {
+      console.log('No List')
+      alert('No Threads we have. You may create one.')
+      // return []
+    }
   }
   const handleRun=()=>{
 
+  }
+  const handleDeleteAllThreads= async ()=>{
+    setOpen(false)
+    try {
+      const response = await axios.post(_URL+'/api/delete-thread',{
+      }, {
+          headers:{
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+          }
+      })
+      console.log('Messages',response)  
+      alert('All Threads Deleted.')
+    } catch (error) {
+      console.log(error)
+      alert('Delete Unsuccessfully.')
+    }
   }
   const handleSendMessage = () => {
     let arr1:String[] =[];
@@ -154,6 +212,23 @@ function WebSocket() {
 
   return (
     <div className="panel">
+     <Dialog
+        open={open}
+        keepMounted
+        onClose={handleClose}
+        aria-describedby="alert-dialog-slide-description"
+      >
+        <DialogTitle>{"Alert!"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-slide-description">
+            All Threads will be deleted. Do you confirm it?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Disagree</Button>
+          <Button onClick={handleDeleteAllThreads}>Agree</Button>
+        </DialogActions>
+      </Dialog>
       <div className="toolbar">
 
       <List component="nav" aria-label="main mailbox folders">
@@ -175,6 +250,12 @@ function WebSocket() {
       <ButtonGroup orientation="horizontal" aria-label="Vertical button group">
             <IconButton onClick={handleNewThread} aria-label="New Thread">
               <PlusIcon />
+            </IconButton>
+            <IconButton onClick={handleListThread} aria-label="List Thread">
+              <ListIcon />
+            </IconButton>
+            <IconButton onClick={handleClickOpen} aria-label="Delete Threads">
+              <DeleteIcon />
             </IconButton>
             <IconButton onClick={handleRun} color="secondary" aria-label="Run">
               <HiChevronDoubleRight />
