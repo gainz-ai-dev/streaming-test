@@ -1,9 +1,34 @@
 import { useState, useEffect, useRef } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { TextField,Button } from '@mui/material';
-  
+import { TextField,Button,ButtonGroup,IconButton,List,ListItemButton,ListItemIcon,ListItemText} from '@mui/material';
+import { createSvgIcon } from '@mui/material/utils';
+import ListIcon from '@mui/icons-material/List';
+import { HiChevronDoubleRight } from "react-icons/hi";
+
+import axios from 'axios';  
+
+const PlusIcon = createSvgIcon(
+  // credit: plus icon from https://heroicons.com/
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  </svg>,
+  'Plus',
+);
+
+const _URL = "http://127.0.0.1:8000"
+
 interface Message {
     sender: string, 
+    message: string
+}
+interface Thread_Message{
+    tid: string, 
     message: string
 }
 function messsageRenderer(msg:String){
@@ -18,6 +43,7 @@ function messsageRenderer(msg:String){
 function WebSocket() {
   const [message, setMessage] = useState('');
   const [msg,setMsg] = useState<Message[]>([])
+  const [threadId, setThreadId] = useState('')
   const token = localStorage.getItem('access_token') || null;
   const socketUrl = `ws://localhost:8000/api/ws` // Replace with your WebSocket server URL
 
@@ -57,25 +83,44 @@ function WebSocket() {
 
   useEffect(() => {
     if (lastMessage) {
-
-        let item:Message= {
-            sender:'',
-            message:''
-        }
-        item['sender'] = "ai"
-        item['message'] = lastMessage.data
-        let arr = [...msg, ...[item]]
-        setMsg(arr) 
-        scrollToBottom()       
+      console.log(lastMessage)
+      
+        // let item:Message= {
+        //     sender:'',
+        //     message:''
+        // }
+        // item['sender'] = "ai"
+        // item['message'] = lastMessage.data
+        // let arr = [...msg, ...[item]]
+        // setMsg(arr) 
+        // scrollToBottom()       
     }
   }, [lastMessage]);
 
-  const handleNewThread = () => { 
+  const handleNewThread = async () => { 
+    try {
+      const response = await axios.post(_URL+'/api/create-thread',{
+      }, {
+          headers:{
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+          }
+      })
+      console.log('Messages',response)
+    } catch (error) {
+      console.log(error)
+    }
     setMsg([])
     setMessage('')
     scrollToBottom()
   };
 
+  const handleListThread=()=>{
+
+  }
+  const handleRun=()=>{
+
+  }
   const handleSendMessage = () => {
     let arr1:String[] =[];
     msg.forEach(item=>{
@@ -83,7 +128,18 @@ function WebSocket() {
             arr1.push(item.message)
     });
     arr1.push(message)
-    sendMessage(JSON.stringify(arr1))
+
+    // Old Method
+    // sendMessage(JSON.stringify(arr1))
+
+    // New Method
+    let json: Thread_Message
+    json ={
+       'tid': threadId, 
+       'message': message
+    }
+    sendMessage(JSON.stringify(json))
+
     let item:Message= {
         sender:'',
         message:''
@@ -97,21 +153,51 @@ function WebSocket() {
   };
 
   return (
-    <div className="chat-container" style={{ height: `${windowHeight}px` }}>
-        <div className="chat-messages"  ref={messagesEndRef} >
-            {msg.map((item, index) => (
-                <div key={index} className={item.sender}>
-                    <p dangerouslySetInnerHTML={{ __html: String(messsageRenderer(item.message)) }}></p>
-                </div>
-            ))} 
-            <div ref={messagesEndRef} />
-        </div>
-        <div className="chat-input">
-            <Button id="send-button" onClick={handleNewThread}>New Thread</Button>
-            <TextField type="text" id="message-input" variant="standard"  placeholder="Type your message" value={message} onChange={(e) => setMessage(e.target.value)} />
-            <Button id="send-button" onClick={handleSendMessage}>Send</Button>
-        </div>
+    <div className="panel">
+      <div className="toolbar">
+
+      <List component="nav" aria-label="main mailbox folders">
+        <ListItemButton
+          selected
+        >
+          <ListItemIcon>
+            <ListIcon />
+          </ListItemIcon>
+          <ListItemText primary="Inbox" />
+        </ListItemButton>
+        <ListItemButton>
+          <ListItemIcon>
+            <ListIcon />
+          </ListItemIcon>
+          <ListItemText primary="Drafts" />
+        </ListItemButton>
+      </List>
+      <ButtonGroup orientation="horizontal" aria-label="Vertical button group">
+            <IconButton onClick={handleNewThread} aria-label="New Thread">
+              <PlusIcon />
+            </IconButton>
+            <IconButton onClick={handleRun} color="secondary" aria-label="Run">
+              <HiChevronDoubleRight />
+            </IconButton>
+        </ButtonGroup>
+
+      </div>
+      <div className="chat-container" style={{ height: `${windowHeight}px` }}>
+          <div className="chat-messages"  ref={messagesEndRef} >
+              {msg.map((item, index) => (
+                  <div key={index} className={item.sender}>
+                      <p dangerouslySetInnerHTML={{ __html: String(messsageRenderer(item.message)) }}></p>
+                  </div>
+              ))} 
+              <div ref={messagesEndRef} />
+          </div>
+          <div className="chat-input">
+              <TextField type="text" id="message-input" variant="standard"  placeholder="Type your message" value={message} onChange={(e) => setMessage(e.target.value)} />
+              <Button id="send-button" className="button" onClick={handleSendMessage}>Send</Button>
+          </div>
+      </div>
     </div>
+
   );
 }
 

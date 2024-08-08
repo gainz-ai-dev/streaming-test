@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from gainz.settings import Settings
 import pymongo
 import logging
-
+from .model import Thread, Message
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -25,3 +25,28 @@ def get_db():
 
 def get_collection():
     return collection
+
+# OpenAI database function
+async def create_thread_record(thread: Thread):
+    # Hash the password before storing
+    try:
+        db = get_db()
+        collection = db['Thread']
+        data = vars(thread)
+        data['_id']= thread.tid
+        collection.insert_one(data)
+        return True
+    except:
+        return False
+    
+async def create_message_record(message: Message):
+    # Hash the password before storing
+    try:
+        db = get_db()
+        collection = db['Message']
+        data = vars(message)
+        data['_id']= message.id
+        collection.insert_one(data)
+        return True
+    except:
+        return False

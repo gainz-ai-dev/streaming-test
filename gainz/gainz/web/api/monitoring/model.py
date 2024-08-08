@@ -16,3 +16,15 @@ class Login(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+
+class Message(BaseModel):
+    id: str
+    tid: str
+    msg: str
+    timestamp: int
+
+class Thread(BaseModel):
+    id:str
+    aid: str
+    uid: str
+    timestamp: int
