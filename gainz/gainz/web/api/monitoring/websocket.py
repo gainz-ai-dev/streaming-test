@@ -4,7 +4,7 @@ import os
 from openai import OpenAI
 import json
 from .auth import get_current_user
-from .model import User, Login, Token, Message, Thread
+from .model import User, Login, Token, Message, Thread, Msg
 from .db import create_message_record, create_thread_record, list_all_threads, delete_all_threads
 import time
 from dotenv import load_dotenv
@@ -40,7 +40,6 @@ def chatAssistantCreate():
     return assistant
 
 def chatCreateMessage(tid: str,msg: str):
-
     message = client.beta.threads.messages.create(
         thread_id=str(tid),
         role="user",
@@ -58,6 +57,11 @@ def chatThreadRun(thread_id:str,assistant_id:str):
         assistant_id=assistant_id,
     )
     return run
+
+def chatThreadList(thread_id:str,assistant_id:str):
+    # run= client.beta.threads.runs.list(thread_id=thread_id,assistant_id=assistant_id)
+    # return run
+    return False
 
 def wait_on_run(run, thread):
     while run.status == "queued" or run.status == "in_progress":
@@ -80,34 +84,59 @@ ws = APIRouter()
 
 @ws.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    global threadId
     await websocket.accept()
-    thread = client.beta.threads.create()
-    tid = thread.id
-    threadId = thread.id
-    print(tid)
     while True:
         data = await websocket.receive_text()
+
+        try:
+            obj = json.loads(str(data))
+            if (obj['id']=="question"):
+                try:
+                    response = chatCreateMessage(str(obj['tid']),str(obj['message']))
+                    await websocket.send_text("Your messages successfully updates our assistant.")
+                except:
+                    await websocket.send_text("Your messages cannot updates to our assistant. Try again")
+            elif (obj['id']=="answer"):
+                try:
+                    run = chatThreadRun(str(obj['tid']),ASSISTANT_ID)
+                    await websocket.send_text("Your questions will be come out soon.")
+                except:
+                    await websocket.send_text("Your messages cannot be answer. Try again")
+            elif (obj['id']=="list"):
+                try:
+                    response = chatThreadList(str(obj['tid']),ASSISTANT_ID)
+                    await websocket.send_text("Your questions will be list out soon.")
+                except:
+                    await websocket.send_text("Your messages cannot be answer. Try again")
+
+        except json.JSONDecodeError:
+                await websocket.send_text("Your messages cannot updates to our assistant. Try again")
+
+        
         ### This is old method 
         # messages_array = json.loads(data)        
         # reply = openChat(messages_array)
         
         # New method
-        messages_array = json.loads(data)
-        print(messages_array)
-        response = chatCreateMessage(tid,messages_array['message'])
-        await websocket.send_text(response)
-
+        # print(vars(data).tid)
+        # oj = json.loads(data)
+        # print(oj)
+        # messages_array = vars(data)
+        # print(data.tid)
+        # print(messages_array)
+        # response = chatCreateMessage(messages_array['tid'],messages_array['message'])
+        # print(response)
+        # await websocket.send_text(response)
 
 @ws.post("/create-assistant")
 async def create_assistant():
     return {"message":"Assistant created successfully."}
 
-@ws.post("/create-message")
-async def chatCreateMessage(ms:Message):
-    thread = chatCreateMessage(ms.tid,ms.msg)
-    print(thread)
-    return thread
+# @ws.post("/create-message")
+# async def chatCreateMessage(ms:Message):
+#     thread = chatCreateMessage(ms.tid,ms.msg)
+#     print(thread)
+#     return thread
 
 
 
@@ -140,9 +169,13 @@ def chatListThread(current_user: User = Depends(get_current_user)):
         return result
     except:
         return False
-    # messages = client.beta.threads.messages.list(thread_id=threadId, order="asc")
-    # print (messages)
-    # return messages
+
+
+@ws.post("/list-messages")
+def chatListMessages(msg: Msg):
+    tid = msg.tid
+    messages = client.beta.threads.messages.list(thread_id=tid, order="asc")
+    return messages
 
 @ws.post("/delete-thread")
 def chatDeleteThread(current_user: User = Depends(get_current_user)):

@@ -29,19 +29,24 @@ const PlusIcon = createSvgIcon(
 );
 
 const _URL = "http://127.0.0.1:8000"
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const ASSISTANT_ID = process.env.ASSISTANT_ID
 
 interface Message {
     sender: string, 
     message: string
 }
 interface Thread {
-    tid: string, 
+    id: string, 
+    aid: string, 
     name: string,
     timestamp: number
 }
 interface Thread_Message{
+    id: string,
     tid: string, 
-    message: string
+    message: string,
+    timestamp: number
 }
 function messsageRenderer(msg:String){
     msg = msg.replace(/\n/g, '<br>')
@@ -53,6 +58,7 @@ function messsageRenderer(msg:String){
 // the socketUrl is hardcode. Will setup a testing server for this in future. 
 
 function WebSocket() {
+  const [selectedItemId, setSelectedItemId] = useState<number>(0);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [threads,setThreads] = useState<Thread[]>([])
@@ -90,7 +96,6 @@ function WebSocket() {
   }, []);
 
   const {
-    sendMessage,
     sendJsonMessage,
     lastMessage,
     readyState,
@@ -104,21 +109,20 @@ function WebSocket() {
         handleListThread()
 
     }
-  }, [sendMessage, readyState, token]);
+  }, [sendJsonMessage,readyState, token]);
 
   useEffect(() => {
     if (lastMessage) {
-      console.log(lastMessage)
       
-        // let item:Message= {
-        //     sender:'',
-        //     message:''
-        // }
-        // item['sender'] = "ai"
-        // item['message'] = lastMessage.data
-        // let arr = [...msg, ...[item]]
-        // setMsg(arr) 
-        // scrollToBottom()       
+        let item:Message= {
+            sender:'',
+            message:''
+        }
+        item['sender'] = "ai"
+        item['message'] = lastMessage.data
+        let arr = [...msg, ...[item]]
+        setMsg(arr) 
+        scrollToBottom()       
     }
   }, [lastMessage]);
 
@@ -141,7 +145,17 @@ function WebSocket() {
     scrollToBottom()
   };
 
-  
+  const handleListMessages = async(tid:string) =>{
+    try {
+      console.log(tid)
+      const response = await axios.post(_URL+'/api/list-messages',{
+          'tid':tid
+      })
+      console.log(response)
+    } catch (error) {
+      console.log(error)
+    }
+  }
   const handleListThread = async ()=>{
     console.log('List Thread')
     try {
@@ -152,6 +166,9 @@ function WebSocket() {
               Authorization: `Bearer ${token}`
           }
       })
+      console.log(response.data)
+      let data = response?.data || [] 
+      setThreads(data)
       // return response
     } catch (error) {
       console.log('No List')
@@ -159,8 +176,76 @@ function WebSocket() {
       // return []
     }
   }
-  const handleRun=()=>{
+  const handleList = async ()=>{
+    let message = "List all run queue list."
+    let arr1:String[] =[];
+    msg.forEach(item=>{
+        if (item.sender=="me")
+            arr1.push(item.message)
+    });
+    arr1.push(message)
 
+    let threadId = threads[selectedItemId].id
+    try {
+      const response = await axios.post(
+        `https://api.openai.com/v1/threads/${threadId}/runs`, {
+          headers:{
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${OPENAI_API_KEY}`,
+              "OpenAI-Beta": 'assistants=v2'
+          }
+      })
+      console.log(response)
+      // let data = response?.data || [] 
+      // return response
+    } catch (error) {
+      console.log('No List')
+      // return []
+    }
+
+    let item:Message= {
+        sender:'',
+        message:''
+    }
+    item['sender'] = "me"
+    item['message'] = message
+    let arr = [...msg, ...[item]]
+    setMsg(arr)
+    setMessage('')
+    scrollToBottom()
+  }
+  const handleRun=()=>{
+    let message = "Please answer based on my previous messages."
+    let arr1:String[] =[];
+    msg.forEach(item=>{
+        if (item.sender=="me")
+            arr1.push(item.message)
+    });
+    arr1.push(message)
+
+    // Old Method
+    // sendMessage(JSON.stringify(arr1))
+
+    // New Method
+    let threadId = threads[selectedItemId].id
+    let json: Thread_Message
+    json ={
+       'id': 'answer', // This is for notice openAI answer the question. 
+       'tid': threadId, 
+       'message': message,
+       'timestamp': 123445546 // Dummy the message timestamp are from the server
+    }
+    sendJsonMessage(json)
+    let item:Message= {
+        sender:'',
+        message:''
+    }
+    item['sender'] = "me"
+    item['message'] = message
+    let arr = [...msg, ...[item]]
+    setMsg(arr)
+    setMessage('')
+    scrollToBottom()
   }
   const handleDeleteAllThreads= async ()=>{
     setOpen(false)
@@ -179,7 +264,8 @@ function WebSocket() {
       alert('Delete Unsuccessfully.')
     }
   }
-  const handleSendMessage = () => {
+  
+  const handleSendMessage = async() => {
     let arr1:String[] =[];
     msg.forEach(item=>{
         if (item.sender=="me")
@@ -191,13 +277,15 @@ function WebSocket() {
     // sendMessage(JSON.stringify(arr1))
 
     // New Method
+    let threadId = threads[selectedItemId].id
     let json: Thread_Message
     json ={
+       'id': 'question',
        'tid': threadId, 
-       'message': message
+       'message': message,
+       'timestamp': 123445546
     }
-    sendMessage(JSON.stringify(json))
-
+    sendJsonMessage(json)
     let item:Message= {
         sender:'',
         message:''
@@ -232,26 +320,21 @@ function WebSocket() {
       <div className="toolbar">
 
       <List component="nav" aria-label="main mailbox folders">
-        <ListItemButton
-          selected
-        >
-          <ListItemIcon>
-            <ListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Inbox" />
-        </ListItemButton>
-        <ListItemButton>
-          <ListItemIcon>
-            <ListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Drafts" />
-        </ListItemButton>
+          {threads.map((item,index) => (
+            <ListItemButton onClick={() => {handleListMessages(item.id); setSelectedItemId(index);}
+            } key={item.id} selected={index === selectedItemId}>
+              <ListItemIcon>
+                <ListIcon />
+              </ListItemIcon>
+              <ListItemText primary={"Thread "+index} />
+            </ListItemButton>
+          ))} 
       </List>
       <ButtonGroup orientation="horizontal" aria-label="Vertical button group">
             <IconButton onClick={handleNewThread} aria-label="New Thread">
               <PlusIcon />
             </IconButton>
-            <IconButton onClick={handleListThread} aria-label="List Thread">
+            <IconButton onClick={handleList} aria-label="List Thread">
               <ListIcon />
             </IconButton>
             <IconButton onClick={handleClickOpen} aria-label="Delete Threads">

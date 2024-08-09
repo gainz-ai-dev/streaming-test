@@ -9,6 +9,8 @@ class User(BaseModel):
     email: str
     password: str
 
+class Msg(BaseModel):
+    tid: str
 
 class Login(BaseModel):
     email: str
