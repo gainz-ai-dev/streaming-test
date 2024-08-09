@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FastAPI WebSocket Demo</title>
+    <style>
+
+        /* General styles for the body and container */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        /* Style for buttons */
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Style for input fields */
+        input[type="text"] {
+            width: calc(50% - 20px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        /* Style for message display area */
+        #messages {
+            width: 60%;
+            height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+            overflow-x: auto;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-line {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        .message-line span {
+            display: inline-block;
+            padding: 5px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .initial-message {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        #messages > div {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 5px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        /* Ensure input fields and buttons align well */
+        input#threadId {
+            width: calc(50% - 20px);
+        }
+
+        /* Add spacing between elements */
+        br {
+            line-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Gainz FastAPI WebSocket Demo</h1>
+
+    <button onclick="createThread()">Create New Thread</button><br><br>
+    Current Thread ID: <input id="threadId" type="text" placeholder="Thread ID">
+    <button onclick="connectToThread()">Connect to Thread</button>
+
+    <br><br>
+
+    <div id="messages"></div><br>
+    <input id="message" type="text" placeholder="Type a message"><br>
+    <button onclick="sendMessage('add_msg_to_thread')">Add Message to Thread</button>
+    <button onclick="sendMessage('run_assistant')">Run Assistant on Thread</button>
+
+    <script>
+        let ws = null;
+        let currentThreadId = 'thread_T6UPg7P1pxe7jXTYdOBfAIJQ';
+        const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyOWU1ZWQxMS05YTRiLTQ2NTktODIwYi1lZDY1MGE4NTRiMmQiLCJhdWQiOlsiZmFzdGFwaS11c2VyczphdXRoIl19.hoEsXvAskBeB9fS1rMg2jfWVARWqYorFz1E8EMMcsUU';
+
+        document.getElementById('threadId').value = `${currentThreadId}`;
+
+        function createThread() {
+            fetch('/api/start-chat', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.thread_id) {
+                    currentThreadId = data.thread_id;
+                    document.getElementById('threadId').value = `${currentThreadId}`;
+                    initializeWebSocket();
+                } else {
+                    console.error('Failed to create a new thread.');
+                }
+            })
+            .catch(error => console.error('Error creating thread:', error));
+        }
+
+
+        function connectToThread() {
+            const threadInput = document.getElementById('threadId');
+            const threadId = threadInput.value.trim();
+            if (threadId) {
+                currentThreadId = threadId;
+                initializeWebSocket();
+            } else {
+                console.error('Thread ID is empty.');
+            }
+        }
+
+
+        // Function to initialize WebSocket connection
+        function initializeWebSocket() {
+            if (!currentThreadId) {
+                console.error('No thread ID available.');
+                return;
+            }
+
+            const wsUrl = `ws://localhost:8000/api/ws?thread_id=${currentThreadId}&token=${jwtToken}`;
+
+            if (ws) {
+                ws.close();
+            }
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                console.log('WebSocket connection established');
+                alert('WebSocket connection established');
+            };
+
+            ws.onmessage = function(event) {
+                const messages = document.getElementById('messages');
+                const data = event.data;
+
+                if (data.startsWith("Msg: ")) {
+                    messages.innerHTML += `<div class="message-line"><span class="initial-message">${data}</span></div>`;
+                } else {
+                    const lastLine = messages.lastElementChild;
+                    if (lastLine && lastLine.classList.contains('message-line')) {
+                        lastLine.innerHTML += `<span>${data}</span>`;
+                    } else {
+                        messages.innerHTML += `<div class="message-line"><span>${data}</span></div>`;
+                    }
+                    messages.scrollLeft = messages.scrollWidth;
+                }
+
+                messages.scrollTop = messages.scrollHeight;
+            };
+
+            ws.onerror = function(event) {
+                console.error('WebSocket error:', event);
+                const messages = document.getElementById('messages');
+                messages.innerHTML += `<div>WebSocket error: ${event.message || 'Unknown error'}</div>`;
+                messages.scrollTop = messages.scrollHeight;
+            };
+
+            ws.onclose = function(event) {
+                console.log('WebSocket connection closed');
+                const messages = document.getElementById('messages');
+                if (event.wasClean) {
+                    messages.innerHTML += `<div>WebSocket closed cleanly, code=${event.code}, reason=${event.reason}</div>`;
+                } else {
+                    messages.innerHTML += `<div>WebSocket connection died</div>`;
+                }
+                messages.scrollTop = messages.scrollHeight;
+            };
+        }
+
+
+        // Function to send a message
+        function sendMessage(msg_type) {
+            const input = document.getElementById('message');
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = {
+                    thread_id: currentThreadId,
+                    msg_type: msg_type,
+                    value: input.value
+                };
+                ws.send(JSON.stringify(message));
+
+                input.value = '';
+                console.log('Message sent:', message);
+            } else {
+                console.error('WebSocket is not open. Cannot send message.');
+                const messages = document.getElementById('messages');
+                messages.innerHTML += `<div>Cannot send message: WebSocket is not open</div>`;
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+
+        // Initialize WebSocket connection on page load
+        //initializeWebSocket();
+    </script>
+</body>
+</html>

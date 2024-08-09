@@ -1,3 +1,6 @@
+# [Video Demo]
+Path: "Gainz_App/demo/FastAPI Demo Video.mp4"
+
 # [backend]
 gainz/ is the backend source code. Building by fastAPI and python
 For test and code review, please follow below instruction. 
