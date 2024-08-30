@@ -1,36 +1,63 @@
-# [backend]
-gainz/ is the backend source code. Building by fastAPI and python
-For test and code review, please follow below instruction. 
+Here's the setup guide for your FastAPI Chat Application broken down into a step-by-step format:
 
-1. Install MongoDB, Python, Docker, and related dependencies. 
-2. Install Python modules. Please view gainz/pyproject.toml. 
-3. As this is using poetry for virtual environment development, please make sure the modules/dependencies are installed under poetry. 
-    `poetry show` can show a list. 
-    `poetry install` will update the modules 
-    `poetry add` [individual modules] 
-4. Copy .env-example in gainz/ to .env. And fill up JWT_SECRET and OPENAI_API_KEY. Either inform henry930@gmail.com to get the key, or you create your own. 
-5. Make sure MongoDB, Docker, Python are up and running. For mongoDB, please stay admin with no password. Then:
-    `cd /gainz/gainz`
-    `poetry run python -m gainz`
+### FastAPI Chat Application Setup Guide
 
-6. Make sure your API url is http://127.0.0.1:8000/api/ As the frontend API Url is hard-code. Otherwise, please change in react manually. (See frontend section)
+#### Prerequisites:
+1. **Python 3.8 or higher**
+2. **MySQL Server**
+3. **pip** (Python package installer)
 
-7. Most of the code are under gainz/gainz/web/api/monitoring/
+#### Database Setup:
+1. **Start MySQL Server:**
+   - Ensure that your MySQL server is running.
+2. **Create a Database:**
+   - Log into your MySQL shell.
+   - Execute the following SQL command to create a new database:
+     ```sql
+     CREATE DATABASE gainzai;
+     ```
 
-# [frontend]
-react_websocket/my-websocket-app is the frontend source code. Building by React and Typescript
-I havn't test for dist/ built. So, please test both fronend and backend LOCALLY.
+#### Environment Setup:
+1. **Clone the Repository:**
+   - Download the code to your local machine using:
+     ```bash
+     git clone <repository-url>
+     cd fastapi-chatbot
+     ```
+2. **Create and Activate a Virtual Environment:**
+   - For Windows:
+     ```bash
+     python -m venv venv
+     .\venv\Scripts\activate
+     ```
+   - For MacOS/Linux:
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+3. **Install Dependencies:**
+   - Install all required Python packages using:
+     ```bash
+     pip install -r requirements.txt
+     ```
 
-1. Node and NPM install in machine (I have just tested in Mac, my Node is 20.x, Apple M1 chipset)
-`cd react_websocket/my-websocket-app`
-`npm install`
+#### Configuration:
+1. **Environment Variables:**
+   - Copy the provided `.env.txt` file to a new `.env` file using:
+     ```bash
+     cp .env.txt .env
+     ```
+   - Open the `.env` file and update it with your MySQL credentials and any other required settings.
 
-2. Make sure your backend is work properly in LOCAL. 
- `npm start`
-3. Your testing URL generally, is http://localhost:3000/ But may vary in different machine. 
+#### Running the Application:
+1. **Run your Application (`main.py`):**
+   - Start the FastAPI server with:
+     ```bash
+     uvicorn main:app --reload
+     ```
+   - This command starts the server with live reloading enabled, which is suitable for development.
 
-4. In frontend, at the first time, you have to register a user for testing. 
-5. Click "Register", and type your email and password, you account should generally be created instantly. Then use your email and password, you can login and chat with AI.
-6. Please use Desktop with chrome browser. The width is no less than 800px, suggested using fullscreen for testing.   
+2. **Access the Application:**
+   - Open a web browser and go to `http://127.0.0.1:8000/` to view the application.
 
-###### For an instant online video demo, you can send henry930@gmail.com or linkedin: http://www.linkedin.com/in/henry930 I can arrange a time for showing my works. ######
+These detailed instructions should guide you smoothly through setting up and running your FastAPI Chat Application.
